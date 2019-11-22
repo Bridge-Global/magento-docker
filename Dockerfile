@@ -1,11 +1,11 @@
-FROM quay.io/alexcheng1982/apache2-php7:7.0.32
+FROM quay.io/alexcheng1982/apache2-php7:7.2.12
 
 LABEL maintainer="akhil.h@bridge-global.com"
-LABEL php_version="7.0.32"
-LABEL magento_version="2.1.17"
-LABEL description="Magento 2.1.17 with PHP 7.0.32"
+LABEL php_version="7.2.12"
+LABEL magento_version="2.3.3"
+LABEL description="Magento 2.1.17 with PHP 7.2.12"
 
-ENV MAGENTO_VERSION 2.1.17
+ENV MAGENTO_VERSION 2.3.3
 ENV INSTALL_DIR /var/www/html
 ENV COMPOSER_HOME /var/www/.composer/
 
@@ -18,9 +18,9 @@ RUN requirements="libpng12-dev libmcrypt-dev libmcrypt4 libcurl3-dev libfreetype
     && apt-get install -y $requirements \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install pdo_mysql \
+    && docker-php-ext-install bcmath \
     && docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
-    && docker-php-ext-install gd \
-    && docker-php-ext-install mcrypt \
+    && docker-php-ext-install gd \	
     && docker-php-ext-install mbstring \
     && docker-php-ext-install zip \
     && docker-php-ext-install intl \
@@ -40,13 +40,13 @@ RUN chown -R www-data:www-data /var/www
 RUN chmod -R 777 /var/www
 RUN usermod -a -G root www-data
 RUN usermod -a -G www-data root
-RUN su www-data -c "cd $INSTALL_DIR && composer install"
+RUN su www-data -c "cd $INSTALL_DIR && composer config minimum-stability dev && composer config prefer-stable true && composer require --no-update 'symfony/service-contracts' && composer update && composer install"
 RUN su www-data -c "cd $INSTALL_DIR && composer config repositories.magento composer https://repo.magento.com/"  
 
-RUN cd $INSTALL_DIR \
-    && find . -type d -exec chmod 777 {} \; \
-    && find . -type f -exec chmod 666 {} \; \
-    && chmod u+x bin/magento
+# RUN cd $INSTALL_DIR \
+#    && find . -type d -exec chmod 777 {} \; \
+#    && find . -type f -exec chmod 666 {} \; \
+#    && chmod u+x bin/magento
 
 COPY ./install-magento /usr/local/bin/install-magento
 RUN chmod +x /usr/local/bin/install-magento
